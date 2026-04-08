@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Recommendations | Resume Analyzer</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --light-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+Q
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .sidebar {
+            width: 280px;
+            padding: 2rem;
+            background-color: white;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background-color: var(--light-bg);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .skill-list {
+            list-style-type: none;
+        }
+
+        .skill-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .skill-item:last-child {
+            border-bottom: none;
+        }
+
+        .skill-item::before {
+            content: "•";
+            color: var(--primary-color);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-right: 0.5rem;
+        }
+
+        .role-card {
+            grid-column: span 2;
+            text-align: center;
+            background-color: #e0f2fe;
+        }
+
+        .role-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-match {
+            display: inline-block;
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .course-card {
+            grid-column: span 2;
+        }
+
+        .course-item {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .course-name {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .course-platform {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .course-difficulty {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background-color: #e0e7ff;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #4338ca;
+        }
+
+        .course-description {
+            margin: 1rem 0;
+            color: var(--text-dark);
+        }
+
+        .course-link {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .course-link:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .action-btn.secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .action-btn.secondary:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* Sidebar navigation styles */
+        .sidebar-nav {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover {
+            background-color: #f1f5f9;
+        }
+
+        .nav-item.active {
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2 class="section-title">Resume Analyzer</h2>
+
+            <!-- Navigation -->
+            <div class="sidebar-nav">
+                <a href="/dashboard" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/course-recommendations" class="nav-item active">
+                    <span class="nav-icon">📚</span>
+                    <span>Course Recommendations</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <a href="/dashboard" class="back-btn">
+                    <span>←</span>
+                    <span>Back to Dashboard</span>
+                </a>
+                <button class="logout-btn">Logout</button>
+            </div>
+
+            <h2 class="section-title">Course Recommendations</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h3 class="card-title">Missing Technical Skills</h3>
+                    <ul class="skill-list">
+                        <li class="skill-item">Python (Advanced)</li>
+                        <li class="skill-item">TensorFlow</li>
+                        <li class="skill-item">PyTorch</li>
+                        <li class="skill-item">Natural Language Processing</li>
+                        <li class="skill-item">Computer Vision</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Missing Soft Skills</h3>
+                    <ul class="skill-list">
+                        <li class="skill-item">Technical Leadership</li>
+                        <li class="skill-item">Stakeholder Management</li>
+                        <li class="skill-item">Agile Methodology</li>
+                        <li class="skill-item">Project Planning</li>
+                    </ul>
+                </div>
+
+                <div class="card role-card">
+                    <h3 class="card-title">Best Role Matches</h3>
+                    <div>
+                        <span class="role-match">Data Scientist: 92%</span>
+                        <span class="role-match">Machine Learning Engineer: 89%</span>
+                        <span class="role-match">AI Research Engineer: 87%</span>
+                        <span class="role-match">Data Engineer: 85%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card course-card">
+                <h3 class="card-title">Recommended Courses to Improve Your Skills</h3>
+
+                <div class="course-item">
+                    <div class="course-header">
+                        <span class="course-name">AI Agents: Building Autonomous AI Systems</span>
+                        <span class="course-platform">Coursera</span>
+                    </div>
+                    <span class="course-difficulty">Intermediate</span>
+                    <p class="course-description">
+                        Learn the principles of designing and building autonomous AI agents using modern machine
+                        learning techniques and architectures. This course covers everything from basic agent design to
+                        advanced deployment strategies.
+                    </p>
+                    <a href="https://www.coursera.com/courses?query=aicourseagents" target="_blank"
+                        class="course-link">View Course</a>
+                </div>
+
+                <div class="course-item">
+                    <div class="course-header">
+                        <span class="course-name">Building and Deploying AI Agents</span>
+                        <span class="course-platform">Udemy</span>
+                    </div>
+                    <span class="course-difficulty">Intermediate</span>
+                    <p class="course-description">
+                        A comprehensive guide to constructing, testing, and deploying AI agents for real-world
+                        applications with a focus on practical implementation. Includes hands-on projects with
+                        TensorFlow and PyTorch.
+                    </p>
+                    <a href="https://www.udemy.com/courses/search/?q=aicourseagentdesign" target="_blank"
+                        class="course-link">View Course</a>
+                </div>
+
+                <div class="course-item">
+                    <div class="course-header">
+                        <span class="course-name">Advanced Python for AI Applications</span>
+                        <span class="course-platform">edX</span>
+                    </div>
+                    <span class="course-difficulty">Advanced</span>
+                    <p class="course-description">
+                        Master advanced Python concepts specifically tailored for AI and machine learning applications.
+                        Covers optimization techniques, multiprocessing, and efficient data handling for large-scale AI
+                        systems.
+                    </p>
+                    <a href="https://www.edx.org/course/advanced-python-for-ai" target="_blank" class="course-link">View
+                        Course</a>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn secondary">Generate Cover Letter</button>
+                <button class="action-btn">Find Matching Jobs</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

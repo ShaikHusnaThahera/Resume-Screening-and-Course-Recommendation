@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Analysis Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --light-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Logo styles - slightly reduced from previous version */
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            padding: 12px 18px;
+            margin-bottom: 18px;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .sidebar {
+            width: 280px;
+            padding: 2rem;
+            background-color: white;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background-color: var(--light-bg);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .welcome-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .welcome-box {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .welcome {
+            padding: 0.5rem 1rem;
+            border-right: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .username {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1.5rem;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #f1f5f9;
+        }
+
+        .section-title {
+            color: blue;
+            font-size: 2.25rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-section {
+            margin-bottom: 2rem;
+        }
+
+        .upload-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .upload-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .file-upload {
+            display: none;
+        }
+
+        .choose-file-btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .choose-file-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .file-types {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .file-type {
+            padding: 0.25rem 1rem;
+            background-color: #e0e7ff;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            color: #4338ca;
+        }
+
+        .analyze-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .analyze-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .dashboard {
+            display: none;
+            /* Hidden initially */
+        }
+
+        .scores-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .score-card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8fafc;
+            border: 6px solid #dbeafe;
+        }
+
+        .score-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .score-value {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .checklist-card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .checklist-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+        }
+
+        .checklist-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .custom-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            margin-right: 12px;
+            display: inline-block;
+            position: relative;
+        }
+
+        .custom-checkbox.checked::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 6px;
+            width: 5px;
+            height: 10px;
+            border: solid var(--primary-color);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .checklist-label {
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+
+        .analysis-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .chart-card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chart-container {
+            height: 250px;
+            position: relative;
+        }
+
+        .missing-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .missing-card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .missing-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .missing-count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f43f5e;
+        }
+
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: all 0.2s;
+            text-align: center;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+
+        .download-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .chat-boat {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 70px;
+            height: 70px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s;
+            line-height: 1.2;
+            font-size: 0.875rem;
+        }
+
+        .chat-boat:hover {
+            background-color: var(--primary-hover);
+            transform: scale(1.05);
+        }
+
+        /* Chart styling */
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chat-modal {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            width: 350px;
+            height: 450px;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .close-chat {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .bot-message {
+            background: #f1f5f9;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem 1rem 1rem 0;
+            margin-bottom: 1rem;
+            max-width: 80%;
+            font-size: 0.9rem;
+        }
+
+        .user-message {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem 1rem 0 1rem;
+            margin-bottom: 1rem;
+            margin-left: auto;
+            max-width: 80%;
+            font-size: 0.9rem;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+        }
+
+        .send-btn {
+            margin-left: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* New styles for course recommendations */
+        .sidebar-nav {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover {
+            background-color: #f1f5f9;
+        }
+
+        .nav-item.active {
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-box {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background-color: #555;
+            border-radius: 50%;
+            animation: blink 1.4s infinite both;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        /* Add this to your existing CSS */
+        #dashboard {
+            background-color: white;
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Ensure charts are visible in the screenshot */
+        .chart-container {
+            background-color: white;
+        }
+
+        @keyframes blink {
+
+            0%,
+            80%,
+            100% {
+                opacity: 0;
+            }
+
+            40% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2 class="section-title" style="color: black; font-size: 2.25rem;">Resume Analyzer</h2>
+            <div class="sidebar-nav">
+                <a href="/dashboard" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/resume-insights" class="nav-item">
+                    <span class="nav-icon">📚</span>
+                    <span>Resume Insights</span>
+                </a>
+                <a href="/course-recommendations" class="nav-item">
+                    <span class="nav-icon">🎓</span>
+                    <span>Course Recommendations</span>
+                </a>
+                <a href="/PDFChatbot" class="nav-item">
+                    <span class="nav-icon">💬</span>
+                    <span>Resume Assistant</span>
+                </a>
+                <a href="/customcoverletter" class="nav-item">
+                    <span class="nav-icon">✉️</span>
+                    <span>Cover Letter Generator</span>
+                </a>
+                <a href="/mock-interview" class="nav-item">
+                    <span class="nav-icon">🎤</span>
+                    <span>Mock Interview</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <div class="welcome-container">
+                    <div class="welcome-box">
+                        <span class="welcome">Welcome</span>
+                        <span class="username" style="color: rgb(4, 3, 47); font-weight: bold;">{{ username }}</span>
+                    </div>
+                </div>
+                <form action="{{ url_for('logout') }}" method="get">
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
+            <form method="POST" action="/dashboard" enctype="multipart/form-data">
+                <div class="upload-container">
+                    <div class="upload-card">
+                        <h3 class="upload-title">Resume Upload</h3>
+                        <input type="file" id="resume-upload" name="resume" class="file-upload">
+                        <label for="resume-upload" class="choose-file-btn">
+                            {{ resume_filename if resume_filename else 'Choose File' }}
+                        </label>
+                        <div class="file-types">
+                            <span class="file-type">PDF</span>
+                            <span class="file-type">DOC</span>
+                            <span class="file-type">DOCX</span>
+                        </div>
+                    </div>
+
+                    <div class="upload-card">
+                        <h3 class="upload-title">Job Description Upload</h3>
+                        <input type="file" id="jd-upload" name="jd" class="file-upload">
+                        <label for="jd-upload" class="choose-file-btn">
+                            {{ jd_filename if jd_filename else 'Choose File' }}
+                        </label>
+                        <div class="file-types">
+                            <span class="file-type">PDF</span>
+                            <span class="file-type">DOC</span>
+                            <span class="file-type">DOCX</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="analyze-btn">Analyze</button>
+            </form>
+            <div id="loading-overlay">
+                <div class="loading-box">
+                    <p>Analyzing, please wait...</p>
+                </div>
+            </div>
+
+            {% if show_dashboard %}
+            <div class="dashboard" id="dashboard">
+                <h2 class="section-title">Analysis Results</h2>
+                <div class="scores-container">
+                    <div class="score-card">
+                        <div class="score-circle">
+                            <div class="score-title">ATS</div>
+                            <div class="score-value">{{ ats_score }}</div>
+                        </div>
+                        <p>Applicant Tracking System Score</p>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-circle">
+                            <div class="score-title">RRS</div>
+                            <div class="score-value">{{ rrs_score }}</div>
+                        </div>
+                        <p>Resume Relevance Score</p>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-circle">
+                            <div class="score-title">RFS</div>
+                            <div class="score-value">{{ rfs_score }}</div>
+                        </div>
+                        <p>Resume Format Score</p>
+                    </div>
+                </div>
+                <div class="dashboard-content">
+                    <div class="checklist-card">
+                        <h3 class="checklist-title">Resume Components</h3>
+                        {% for component, status in resume_components.items() %}
+                        <div class="checklist-item">
+                            <span class="custom-checkbox {% if status %}checked{% endif %}"></span>
+                            <span class="checklist-label">{{ component }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="analysis-section">
+                        <div class="chart-card">
+                            <h3 class="chart-title">Resume Strength Analysis</h3>
+                            <div class="chart-container">
+                                <svg class="chart-svg" viewBox="0 0 400 200" preserveAspectRatio="none">
+                                    <path d="M0,200 L50,150 L100,100 L150,120 L200,80 L250,70 L300,50 L350,30 L400,10"
+                                        stroke="#3b82f6" stroke-width="3" fill="none"></path>
+                                    <path
+                                        d="M0,200 L50,150 L100,100 L150,120 L200,80 L250,70 L300,50 L350,30 L400,10 L400,200 Z"
+                                        fill="rgba(59, 130, 246, 0.1)"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="tips-section">
+                            <h3>Resume Improvement Tips</h3>
+                            <ul>
+                                {% for tip in resume_tips %}
+                                <li>{{ tip|safe }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="missing-info">
+                            <div class="missing-card">
+                                <h4 class="missing-title">MISSING KEYWORDS</h4>
+                                <div class="missing-count">{{ missing_keywords }}</div>
+                                <p>missing_keywords Count :
+                                    {{missing_keywords_count }}
+                                </p>
+
+                            </div>
+                            <div class="missing-card">
+                                <h4 class="missing-title">MISSING SKILLS</h4>
+                                <div class="missing-count">{{ missing_skills }}</div>
+                                <p> Missing Skills Count:
+                                    {{missing_skills_count }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="download-btn" id="download-btn">Download Report</a>
+            </div>
+            {% endif %}
+
+            <div class="chat-boat" onclick="toggleChat()">
+                <span>Chat</span>
+                <span>Assistant</span>
+            </div>
+
+            <div class="chat-modal" id="chat-modal">
+                <div class="chat-header">
+                    <h3>Resume Assistant</h3>
+                    <button class="close-chat" onclick="toggleChat()">×</button>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="bot-message">Hello! How can I help you with your resume today?</div>
+                    <div class="typing-indicator" id="bot-typing" style="display: none;">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Type your question...">
+                    <button class="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+
+            <script>
+                // Toggle dashboard visibility
+                function showDashboard() {
+                    document.getElementById('dashboard').style.display = 'block';
+                    document.querySelector('.upload-section').style.display = 'none';
+                }
+
+                // Toggle chat modal
+                function toggleChat() {
+                    const chatModal = document.getElementById('chat-modal');
+                    chatModal.style.display = chatModal.style.display === 'flex' ? 'none' : 'flex';
+                }
+
+                // Download dashboard as image
+                document.getElementById('download-btn')?.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const dashboard = document.getElementById('dashboard');
+                    document.getElementById('loading-overlay').style.display = 'flex';
+                    document.querySelector('.loading-box p').textContent = 'Generating report...';
+
+                    html2canvas(dashboard, {
+                        scale: 2,
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true,
+                        scrollY: -window.scrollY
+                    }).then(canvas => {
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        const link = document.createElement('a');
+                        link.download = 'resume-analysis-report.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }).catch(err => {
+                        console.error('Error generating report:', err);
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        alert('Error generating report. Please try again.');
+                    });
+                });
+
+                // Chatbot message sender
+                function sendMessage() {
+                    const input = document.getElementById('chat-input');
+                    const message = input.value.trim();
+                    const chatMessages = document.getElementById('chat-messages');
+                    const botTyping = document.getElementById('bot-typing');
+
+                    if (message) {
+                        chatMessages.innerHTML += `<div class="user-message">${message}</div>`;
+                        input.value = '';
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        botTyping.style.display = 'flex';
+
+                        fetch('/chatbot', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ query: message })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                botTyping.style.display = 'none';
+                                const botResponse = data.response || "Sorry, I couldn't process your message.";
+                                chatMessages.innerHTML += `<div class="bot-message">${botResponse}</div>`;
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            })
+                            .catch(() => {
+                                botTyping.style.display = 'none';
+                                chatMessages.innerHTML += `<div class="bot-message">Error connecting to assistant.</div>`;
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            });
+                    }
+                }
+
+                // Enter key triggers chat send
+                document.getElementById('chat-input').addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') sendMessage();
+                });
+
+                // Show loading on form submission
+                document.querySelector("form").addEventListener("submit", function () {
+                    document.getElementById("loading-overlay").style.display = "flex";
+                });
+
+                // File input - display chosen filename correctly
+                document.getElementById('resume-upload').addEventListener('change', function () {
+                    const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
+                    const label = this.closest('.upload-card').querySelector('.choose-file-btn');
+                    label.textContent = fileName;
+                });
+
+                document.getElementById('jd-upload').addEventListener('change', function () {
+                    const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
+                    const label = this.closest('.upload-card').querySelector('.choose-file-btn');
+                    label.textContent = fileName;
+                });
+
+                // Show dashboard if it should be visible
+                {% if show_dashboard %}
+                document.getElementById('dashboard').style.display = 'block';
+                {% endif %}
+            </script>
+        </div>
+    </div>
+</body>
+
+</html>

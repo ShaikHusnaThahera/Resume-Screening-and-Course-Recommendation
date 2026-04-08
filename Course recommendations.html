@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Course Recommendations | Resume Analyzer Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            background-color: #f8fafc;
+        }
+
+        /* Sidebar Styles - Matching ATS Score.html */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+            color: #fff;
+            height: 100vh;
+            position: fixed;
+            padding: 40px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar .logo {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #fff 0%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-link {
+            padding: 14px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #e2e8f0;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-link.active {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-left: 4px solid #3b82f6;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+            transform: translateX(5px);
+            color: #fff;
+        }
+
+        .main-content {
+            margin-left: 300px;
+            padding: 40px;
+            width: calc(100% - 300px);
+        }
+
+        /* Status Container Styles */
+        .status-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .status-header h1 {
+            color: #1e3a8a;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .analyze-button {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .analyze-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .status-details {
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e0e7ff;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        /* Courses Container */
+        .courses-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .courses-container h2 {
+            color: #1e3a8a;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .courses-container h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            height: 20px;
+            width: 5px;
+            background: #2563eb;
+            border-radius: 5px;
+        }
+
+        /* Search Bar */
+        #courseSearch {
+            padding: 12px 16px;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        #courseSearch:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Course Categories */
+        .course-category {
+            margin-bottom: 40px;
+        }
+
+        .course-category h3 {
+            color: #1e3a8a;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .course-category svg {
+            width: 24px;
+            height: 24px;
+            stroke: #2563eb;
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* Course Items */
+        .course-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+            border-color: rgba(37, 99, 235, 0.2);
+        }
+
+        .course-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #2563eb, #1e40af);
+        }
+
+        .course-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: #e0f2fe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0369a1;
+            margin-bottom: 15px;
+        }
+
+        .course-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        .course-description {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .course-type {
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .platform-udemy {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            color: #0369a1;
+        }
+
+        .platform-youtube {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #b91c1c;
+        }
+
+        .platform-coursera {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
+
+        /* Modal Styles */
+        #courseModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .modal-content h3 {
+            color: #1e3a8a;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .youtube-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: red;
+            font-weight: bold;
+            font-size: 1.5rem;
+            background-color: #f9f9f9;
+            padding: 10px 15px;
+            border-left: 5px solid red;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .youtube-icon {
+            flex-shrink: 0;
+        }
+
+        .modal-enroll-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .modal-enroll-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .modal-close-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .modal-close-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .courses-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 20px;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .status-details {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="logo">Resume Analyzer</div>
+        <a href="Dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="Ats score.html" class="nav-link">🎯 ATS Score</a>
+        <a href="Resume score.html" class="nav-link">📝 Resume Score</a>
+        <a href="Missing skills.html" class="nav-link">⚠️ Missing Skills</a>
+        <a href="Course recommendations.html" class="nav-link active">📚 Course Recommendations</a>
+        <a href="Cover letter.html" class="nav-link">✉️ Cover Letter Generator</a>
+        <a href="ATS Optimized Resume Builder.html" class="nav-link">📄 ATS Optimized Resume Builder</a>
+    </div>
+
+    <div class="main-content">
+        <div class="status-container">
+            <div class="status-header">
+                <h1>Course Recommendations</h1>
+                <button class="analyze-button" onclick="refreshRecommendations()">Refresh Recommendations</button>
+            </div>
+
+            <div class="status-details">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <div>Recommendations Complete</div>
+                </div>
+                <div>
+                    <span style="font-weight: 500">Job: </span>Senior Frontend Developer
+                </div>
+                <div>
+                    <span style="font-weight: 500">Last Updated: </span>March 16, 2025
+                </div>
+            </div>
+        </div>
+
+        <div class="courses-container">
+            <h2>Recommended Courses</h2>
+
+            <!-- Search Bar -->
+            <input type="text" id="courseSearch" placeholder="Search courses...">
+
+            <!-- Course Categories -->
+            <div class="course-category">
+                <h3>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+                        <path d="M22 4L12 14.01l-3-3"></path>
+                    </svg>
+                    Technical Courses
+                </h3>
+                <div class="courses-grid" id="technicalCoursesGrid">
+                    <!-- Technical Courses will be dynamically populated here -->
+                </div>
+            </div>
+
+            <div class="course-category">
+                <h3>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 010 7.75"></path>
+                    </svg>
+                    Soft Skills Courses
+                </h3>
+                <div class="courses-grid" id="softCoursesGrid">
+                    <!-- Soft Skills Courses will be dynamically populated here -->
+                </div>
+            </div>
+
+            <!-- YouTube Courses Section -->
+            <div class="course-category">
+                <h3 class="youtube-heading">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="red" stroke="red" stroke-width="2"
+                        class="youtube-icon">
+                        <rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect>
+                        <path d="M10 9l5 3-5 3V9z"></path>
+                    </svg>
+                    YouTube Courses
+                </h3>
+
+                <div class="courses-grid" id="youtubeCoursesGrid">
+                    <!-- YouTube Courses will be dynamically populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Details Modal -->
+    <div id="courseModal">
+        <div class="modal-content">
+            <h3 id="modalCourseName"></h3>
+            <p id="modalCourseDescription"></p>
+            <div class="modal-actions">
+                <a id="modalCourseLink" href="#" target="_blank" class="modal-enroll-btn">Enroll Now</a>
+                <button class="modal-close-btn" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample Data for Courses
+        const coursesData = {
+            technical: [
+                {
+                    name: "React Native Masterclass",
+                    description: "Learn React Native from scratch and build mobile apps. This comprehensive course covers everything from basic components to advanced state management.",
+                    link: "https://example.com/react-native",
+                    platform: "udemy"
+                },
+                {
+                    name: "GraphQL for Beginners",
+                    description: "Understand GraphQL and build efficient APIs. Learn how to create schemas, queries, and mutations with practical examples.",
+                    link: "https://example.com/graphql",
+                    platform: "udemy"
+                },
+                {
+                    name: "Advanced Redux",
+                    description: "Master Redux for state management in React apps. Includes middleware, redux-toolkit, and performance optimization techniques.",
+                    link: "https://example.com/redux",
+                    platform: "coursera"
+                },
+                {
+                    name: "TypeScript Fundamentals",
+                    description: "Get started with TypeScript and build scalable apps. Learn about interfaces, generics, decorators and more.",
+                    link: "https://example.com/typescript",
+                    platform: "udemy"
+                }
+            ],
+            soft: [
+                {
+                    name: "Effective Communication",
+                    description: "Improve your communication skills for better teamwork. Covers verbal, non-verbal, and written communication techniques.",
+                    link: "https://example.com/communication",
+                    platform: "coursera"
+                },
+                {
+                    name: "Problem Solving Techniques",
+                    description: "Learn proven techniques to solve complex problems. Includes frameworks for decision making and creative thinking.",
+                    link: "https://example.com/problem-solving",
+                    platform: "udemy"
+                },
+                {
+                    name: "Cross-functional Collaboration",
+                    description: "Work effectively with teams across different functions. Learn strategies for alignment, conflict resolution, and productivity.",
+                    link: "https://example.com/collaboration",
+                    platform: "coursera"
+                }
+            ],
+            youtube: [
+                {
+                    name: "React Native Crash Course",
+                    description: "A quick introduction to React Native. Build your first mobile app in this 2-hour tutorial.",
+                    link: "https://www.youtube.com/watch?v=example1",
+                    platform: "youtube"
+                },
+                {
+                    name: "GraphQL in 30 Minutes",
+                    description: "Learn GraphQL basics in 30 minutes. Perfect for developers who want a quick overview.",
+                    link: "https://www.youtube.com/watch?v=example2",
+                    platform: "youtube"
+                },
+                {
+                    name: "Redux Tutorial for Beginners",
+                    description: "Understand Redux with practical examples. Covers actions, reducers, and the store.",
+                    link: "https://www.youtube.com/watch?v=example3",
+                    platform: "youtube"
+                },
+                {
+                    name: "TypeScript Tutorial",
+                    description: "Learn TypeScript step by step. From basic types to advanced features.",
+                    link: "https://www.youtube.com/watch?v=example4",
+                    platform: "youtube"
+                }
+            ]
+        };
+
+        // Function to render courses in the grid
+        function renderCourses(courses, gridId) {
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = courses.map(course => `
+                <div class="course-item" onclick="openCourseModal('${course.name}', '${course.description}', '${course.link}')">
+                    <div class="course-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        </svg>
+                    </div>
+                    <div class="course-info">
+                        <div class="course-name">${course.name}</div>
+                        <div class="course-description">${course.description.substring(0, 100)}...</div>
+                        <span class="course-type platform-${course.platform}">
+                            ${course.platform.charAt(0).toUpperCase() + course.platform.slice(1)}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Function to refresh recommendations
+        function refreshRecommendations() {
+            // Simulate a refresh by re-rendering courses
+            renderCourses(coursesData.technical, "technicalCoursesGrid");
+            renderCourses(coursesData.soft, "softCoursesGrid");
+            renderCourses(coursesData.youtube, "youtubeCoursesGrid");
+            alert("Recommendations refreshed successfully!");
+        }
+
+        // Function to open course details modal
+        function openCourseModal(courseName, courseDescription, courseLink) {
+            document.getElementById("modalCourseName").textContent = courseName;
+            document.getElementById("modalCourseDescription").textContent = courseDescription;
+            document.getElementById("modalCourseLink").href = courseLink;
+            document.getElementById("courseModal").style.display = "flex";
+        }
+
+        // Function to close course details modal
+        function closeModal() {
+            document.getElementById("courseModal").style.display = "none";
+        }
+
+        // Search functionality
+        document.getElementById("courseSearch").addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const allCourses = [...coursesData.technical, ...coursesData.soft, ...coursesData.youtube];
+            const filteredCourses = allCourses.filter(course => course.name.toLowerCase().includes(searchTerm));
+
+            renderCourses(filteredCourses.filter(course => coursesData.technical.includes(course)), "technicalCoursesGrid");
+            renderCourses(filteredCourses.filter(course => coursesData.soft.includes(course)), "softCoursesGrid");
+            renderCourses(filteredCourses.filter(course => coursesData.youtube.includes(course)), "youtubeCoursesGrid");
+        });
+
+        // Initial rendering of courses
+        document.addEventListener("DOMContentLoaded", () => {
+            renderCourses(coursesData.technical, "technicalCoursesGrid");
+            renderCourses(coursesData.soft, "softCoursesGrid");
+            renderCourses(coursesData.youtube, "youtubeCoursesGrid");
+        });
+    </script>
+</body>
+
+</html>

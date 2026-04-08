@@ -1,0 +1,17 @@
+venv/
+venv310/
+.env
+__pycache__/
+*.pyc
+uploads/
+outputs/
+*.db
+*.zip
+uploads/
+testfiles/
+outputs/
+*.pdf
+*.docx
+*.png
+*.db
+instance/

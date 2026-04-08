@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: resume-ats-system
+    runtime: python
+    buildCommand: |
+      apt-get install -y wkhtmltopdf
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app

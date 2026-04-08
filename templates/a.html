@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Optimized Resume Builder</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --light-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .sidebar {
+            width: 280px;
+            padding: 2rem;
+            background-color: white;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background-color: var(--light-bg);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .welcome-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .welcome-box {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .welcome {
+            padding: 0.5rem 1rem;
+            border-right: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .username {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1.5rem;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #f1f5f9;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .upload-section {
+            margin-bottom: 2rem;
+        }
+
+        .upload-card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .upload-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .file-upload {
+            display: none;
+        }
+
+        .choose-file-btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .choose-file-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .file-types {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .file-type {
+            padding: 0.25rem 1rem;
+            background-color: #e0e7ff;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            color: #4338ca;
+        }
+
+        .resume-preview-container {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .resume-preview {
+            width: 100%;
+            height: 800px;
+            border: 1px solid var(--border-color);
+            margin-top: 1rem;
+            overflow: auto;
+        }
+
+        .resume-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .job-recommendations {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .job-list {
+            margin-top: 1rem;
+        }
+
+        .job-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .job-item:last-child {
+            border-bottom: none;
+        }
+
+        .job-role {
+            font-weight: 600;
+        }
+
+        .apply-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .apply-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Navigation */
+        .sidebar-nav {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover {
+            background-color: #f1f5f9;
+        }
+
+        .nav-item.active {
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-box {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .file-name {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .optimize-btn {
+            display: block;
+            width: 100%;
+            max-width: 200px;
+            padding: 0.75rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            margin: 1.5rem auto 0;
+            transition: all 0.2s;
+        }
+
+        .optimize-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .optimize-btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2 class="section-title">Resume Analyzer</h2>
+
+            <!-- Navigation -->
+            <div class="sidebar-nav">
+                <a href="Dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="Ats score.html" class="nav-item">
+                    <span class="nav-icon">🎯</span>
+                    <span>ATS Score</span>
+                </a>
+                <a href="Resume score.html" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span>Resume Score</span>
+                </a>
+                <a href="Missing skills.html" class="nav-item">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Missing Skills</span>
+                </a>
+                <a href="Course recommendations.html" class="nav-item">
+                    <span class="nav-icon">📚</span>
+                    <span>Course Recommendations</span>
+                </a>
+                <a href="Cover letter.html" class="nav-item">
+                    <span class="nav-icon">✉️</span>
+                    <span>Cover Letter Generator</span>
+                </a>
+                <a href="ATS Optimized Resume Builder.html" class="nav-item active">
+                    <span class="nav-icon">📄</span>
+                    <span>Resume Builder</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <div class="welcome-container">
+                    <div class="welcome-box">
+                        <span class="welcome">Welcome</span>
+                        <span class="username">HUSNATHAHERASHAIK</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn">Logout</a>
+            </div>
+
+            <div class="upload-section">
+                <h2 class="section-title">ATS Optimized Resume Builder</h2>
+
+                <div class="upload-card">
+                    <h3 class="upload-title">Upload Your Resume</h3>
+                    <input type="file" id="resume-upload" class="file-upload" accept=".pdf,.doc,.docx">
+                    <label for="resume-upload" class="choose-file-btn">Choose File</label>
+                    <div id="file-name" class="file-name">No file chosen</div>
+                    <div class="file-types">
+                        <span class="file-type">PDF</span>
+                        <span class="file-type">DOC</span>
+                        <span class="file-type">DOCX</span>
+                    </div>
+                    <button class="optimize-btn" id="optimize-btn" disabled>Optimize Resume</button>
+                </div>
+            </div>
+
+            <div class="resume-preview-container">
+                <h3 class="section-title">Resume Preview</h3>
+                <div class="resume-preview" id="resume-preview">
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <p>Upload your resume to see the preview</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-recommendations">
+                <h3 class="section-title">Job Recommendations</h3>
+                <div class="job-list" id="job-list">
+                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                        <p>Upload your resume to see job recommendations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-overlay">
+        <div class="loading-box">
+            <p>Processing your resume...</p>
+        </div>
+    </div>
+
+    <script>
+        // Handle file upload
+        document.getElementById('resume-upload').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            const fileNameDisplay = document.getElementById('file-name');
+            const optimizeBtn = document.getElementById('optimize-btn');
+
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                optimizeBtn.disabled = false;
+                document.getElementById('loading-overlay').style.display = 'flex';
+
+                // Create object URL for the file
+                const fileUrl = URL.createObjectURL(file);
+
+                // Simulate processing delay
+                setTimeout(() => {
+                    const previewContainer = document.getElementById('resume-preview');
+
+                    if (file.type === 'application/pdf') {
+                        // For PDF files, use embed element
+                        previewContainer.innerHTML = `
+                            <embed class="resume-iframe" src="${fileUrl}" type="application/pdf">
+                        `;
+                    } else if (file.type === 'application/msword' ||
+                        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                        // For DOC/DOCX files, we would typically convert to HTML or use a service
+                        // Here we'll show a message with a download link as a fallback
+                        previewContainer.innerHTML = `
+                            <div style="text-align: center; padding: 40px;">
+                                <p>Word document preview is not available in browser</p>
+                                <p>File: ${file.name}</p>
+                                <a href="${fileUrl}" download="${file.name}" style="color: var(--primary-color); margin-top: 20px; display: inline-block;">
+                                    Download Word Document
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        // For other file types (shouldn't happen with our accept attribute)
+                        previewContainer.innerHTML = `
+                            <div style="text-align: center; padding: 40px;">
+                                <p>File type not supported for preview</p>
+                                <p>File: ${file.name}</p>
+                                <a href="${fileUrl}" download="${file.name}" style="color: var(--primary-color); margin-top: 20px; display: inline-block;">
+                                    Download File
+                                </a>
+                            </div>
+                        `;
+                    }
+
+                    // Show sample job recommendations
+                    showJobRecommendations();
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }, 1500);
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+                optimizeBtn.disabled = true;
+            }
+        });
+
+        // Optimize button handler
+        document.getElementById('optimize-btn').addEventListener('click', function () {
+            const fileInput = document.getElementById('resume-upload');
+            if (fileInput.files.length > 0) {
+                document.getElementById('loading-overlay').style.display = 'flex';
+
+                // Simulate optimization processing
+                setTimeout(() => {
+                    // In a real app, this would send the file to a server for optimization
+                    // and return the optimized version
+                    alert('Resume optimization complete!');
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }, 2000);
+            }
+        });
+
+        function showJobRecommendations() {
+            // In a real app, this would come from an API based on the resume content
+            const jobList = document.getElementById('job-list');
+            jobList.innerHTML = `
+                <div class="job-item">
+                    <span class="job-role">Senior Software Engineer</span>
+                    <button class="apply-btn">Apply</button>
+                </div>
+                <div class="job-item">
+                    <span class="job-role">Full Stack Developer</span>
+                    <button class="apply-btn">Apply</button>
+                </div>
+                <div class="job-item">
+                    <span class="job-role">Frontend Developer (React)</span>
+                    <button class="apply-btn">Apply</button>
+                </div>
+                <div class="job-item">
+                    <span class="job-role">Backend Engineer</span>
+                    <button class="apply-btn">Apply</button>
+                </div>
+            `;
+
+            // Add click handlers for apply buttons
+            document.querySelectorAll('.apply-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const jobRole = this.parentElement.querySelector('.job-role').textContent;
+                    alert(`Applying for ${jobRole}...`);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
