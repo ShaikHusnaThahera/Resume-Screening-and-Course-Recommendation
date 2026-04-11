@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: resume-ats-system
+    name: ResuMatch
     runtime: python
     buildCommand: |
       apt-get install -y wkhtmltopdf
