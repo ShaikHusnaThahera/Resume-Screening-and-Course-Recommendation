@@ -616,7 +616,7 @@
     </style>
 </head>
 
-<body>
+<body data-show-dashboard="{{ 'true' if show_dashboard else 'false' }}">
     <div class="container">
         <div class="sidebar">
             <h2 class="section-title" style="color: black; font-size: 2.25rem;">Resume Analyzer</h2>
@@ -649,6 +649,12 @@
         </div>
 
         <div class="main-content">
+            {% if error %}<div
+                style="background:#fee2e2;color:#991b1b;padding:14px 18px;border-radius:10px;margin-bottom:16px;">{{
+                error }}</div>{% endif %}
+            {% for category, msg in get_flashed_messages(with_categories=true) %}<div
+                style="background:#fef3c7;color:#92400e;padding:14px 18px;border-radius:10px;margin-bottom:16px;">{{ msg
+                }}</div>{% endfor %}
             <div class="header">
                 <div class="welcome-container">
                     <div class="welcome-box">
@@ -896,9 +902,9 @@
                 });
 
                 // Show dashboard if it should be visible
-                {% if show_dashboard %}
-                document.getElementById('dashboard').style.display = 'block';
-                {% endif %}
+                if (document.body.dataset.showDashboard === 'true') {
+                    document.getElementById('dashboard').style.display = 'block';
+                }
             </script>
         </div>
     </div>
