@@ -112,7 +112,7 @@ def dashboard():
             jd.save(jd_path)
             print(f"[DEBUG] Job description uploaded: {jd_filename}")
         
-        rolematch = resume_analytics.getJobRecommendations(resume_path)
+        rolematch = resume_analytics.getJobRecommendations(resume_path) if resume_path else {}
         print(f"[DEBUG] Raw rolematch: {rolematch}")
         
         if isinstance(rolematch, dict):
@@ -138,7 +138,15 @@ def dashboard():
         else:
             shared_data['rolematch'] = {}
 
+        if not resume_path or not jd_path:
+            return render_template('DASHBOARD.html', username=username,
+                                   error="Please upload both a resume and a job description (pdf/docx/txt).")
         result = resume_analytics.resumeanalytics(resume_path, jd_path)
+        if not result:
+            return render_template('DASHBOARD.html', username=username,
+                                   error="Analysis failed on the server. Check the Render logs.")
+        if result.get("ERROR"):
+            flash("AI error: " + result["ERROR"], "warning")
         print("DEBUG: resume_path =", resume_path)
         print("DEBUG: jd_path     =", jd_path)
         print("DEBUG: result type =", type(result))
@@ -167,9 +175,10 @@ def dashboard():
             print("DEBUG: result keys =", list(result.keys()))
             print("DEBUG: ATS_SCORE raw=", result.get('ATS_SCORE'))
         global coverletterdata
-        coverletterdata = resume_analytics.getCoverLetter(resume_path, jd_path)
+        coverletterdata = ""
         if jd_path and resume_path:
             cover_letter = resume_analytics.getCoverLetter(resume_path, jd_path)
+            coverletterdata = cover_letter or ""
             if isinstance(cover_letter,str) and cover_letter.strip():
                 shared_data['cover_letter'] = cover_letter
                 shared_data['cover_letter_preview'] = cover_letter[:150] + "..." if len(cover_letter) > 150 else cover_letter
@@ -441,12 +450,7 @@ def mock_interview():
 Return ONLY a JSON array:
 ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]"""
             try:
-                result = resume_analytics.client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt}],
-                    model=resume_analytics.model_name,
-                    max_tokens=500, temperature=0.7,
-                )
-                text = result.choices[0].message.content.strip()
+                text = resume_analytics._chat([{"role": "user", "content": prompt}], temperature=0.7, max_tokens=500)
                 text = re.sub(r"^```json|^```|```$", "", text, flags=re.MULTILINE).strip()
                 questions = json.loads(text)
                 return jsonify({"questions": questions})
@@ -470,12 +474,7 @@ Return exactly:
   "ideal_answer": "brief ideal answer in 2-3 sentences"
 }}"""
             try:
-                result = resume_analytics.client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt}],
-                    model=resume_analytics.model_name,
-                    max_tokens=600, temperature=0.3,
-                )
-                text = result.choices[0].message.content.strip()
+                text = resume_analytics._chat([{"role": "user", "content": prompt}], temperature=0.3, max_tokens=600)
                 text = re.sub(r"^```json|^```|```$", "", text, flags=re.MULTILINE).strip()
                 feedback = json.loads(text)
                 return jsonify({"feedback": feedback})

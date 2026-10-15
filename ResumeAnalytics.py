@@ -51,54 +51,74 @@ class ResumeAnalytics:
             raise ImportError("groq package not installed. Run: pip install groq")
 
         self.client = Groq(api_key=self.GROQ_API_KEY)
-        self.model_name = "llama-3.3-70b-versatile"   # Free, fast, very capable
+
+        # Groq retired llama-3.3-70b-versatile and llama-3.1-8b-instant on 16 Aug 2026.
+        # Override on Render with a GROQ_MODEL env var if Groq retires these too.
+        self.model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+        self.fallback_models = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
 
         self.outputsFOLDER = "outputs"
         os.makedirs(self.outputsFOLDER, exist_ok=True)
-        self.model_name = "llama-3.3-70b-versatile"
-        self.fallback_model = "llama-3.1-8b-instant"   # ← add this line
-        logger.info("Groq (Llama3-70b) model initialized successfully.")
+        logger.info(f"Groq client initialized. Model: {self.model_name}")
+
+    # ────────────────────────────────────────────
+    #  SINGLE place that talks to Groq (with model fallback)
+    # ────────────────────────────────────────────
+    def _chat(self, messages, temperature=0.3, max_tokens=4096) -> str:
+        """Call Groq. If a model is retired/not found, try the next one."""
+        models = [self.model_name] + [m for m in self.fallback_models if m != self.model_name]
+        last_err = None
+        for model in models:
+            try:
+                resp = self.client.chat.completions.create(
+                    messages=messages, model=model,
+                    temperature=temperature, max_tokens=max_tokens,
+                )
+                if model != self.model_name:
+                    logger.warning(f"Switched to working model: {model}")
+                    self.model_name = model
+                return (resp.choices[0].message.content or "").strip()
+            except Exception as e:
+                err = str(e).lower()
+                last_err = e
+                retired = any(k in err for k in ("decommission", "deprecat", "model_not_found",
+                                                 "does not exist", "no longer supported", "404"))
+                logger.error(f"Groq call failed on model {model}: {e}")
+                if not retired:
+                    raise          # key invalid / rate limit / network -> real error, don't hide it
+        raise last_err
 
     # ────────────────────────────────────────────
     #  CORE: call AI and always return a dict
     # ────────────────────────────────────────────
     def getResponse(self, prompt: str) -> Dict[str, Any]:
-        """Always returns a dict — never None, never a string."""
+        """Always returns a dict. On failure the dict has an 'error' key with the REAL reason."""
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are an expert resume screening assistant. "
-                            "Always return ONLY valid JSON — no markdown, no explanation, "
-                            "no code fences, just the raw JSON object."
-                        ),
-                    },
+            text = self._chat(
+                [
+                    {"role": "system", "content": (
+                        "You are an expert resume screening assistant. "
+                        "Always return ONLY valid JSON - no markdown, no explanation, "
+                        "no code fences, just the raw JSON object.")},
                     {"role": "user", "content": prompt},
                 ],
-                model=self.model_name,
-                temperature=0.3,
-                max_tokens=4096,
+                temperature=0.3, max_tokens=8192,
             )
-
-            text = chat_completion.choices[0].message.content.strip()
-            # Strip accidental markdown fences
             text = re.sub(r"^```json|^```|```$", "", text, flags=re.MULTILINE).strip()
-            return json.loads(text)
+            m = re.search(r"\{.*\}", text, flags=re.DOTALL)   # grab the JSON object if extra text exists
+            return json.loads(m.group(0) if m else text)
         except json.JSONDecodeError as e:
             logger.error(f"JSON decode error: {e}")
-            return {"error": "Invalid JSON returned by AI"}
+            return {"error": "AI returned invalid JSON. Please try again."}
         except Exception as e:
             err = str(e)
-            if "decommissioned" in err or "model_decommissioned" in err:
-                logger.warning(f"Model decommissioned! Switching to fallback: {self.fallback_model}")
-                self.model_name = self.fallback_model
-                return self.getResponse(prompt)   # retry once with fallback
+            logger.error(f"Groq API error: {err}")
+            if "401" in err or "invalid_api_key" in err.lower():
+                return {"error": "Groq API key is invalid or missing on the server."}
             if "429" in err or "rate" in err.lower():
                 return {"error": "AI rate limit hit. Please wait a moment and try again."}
-            logger.error(f"Groq API error: {e}")
             return {"error": err}
+
     # ────────────────────────────────────────────
     #  TEXT CLEANING
     # ────────────────────────────────────────────
@@ -173,7 +193,7 @@ class ResumeAnalytics:
 
         if "error" in result:
             logger.error(f"AI returned error: {result['error']}")
-            return self._default_result()
+            return self._default_result(result["error"])
 
         # Save output
         out_path = os.path.join(self.outputsFOLDER,
@@ -229,16 +249,7 @@ class ResumeAnalytics:
         )
 
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "You are a professional cover letter writer."},
-                    {"role": "user", "content": prompt},
-                ],
-                model=self.model_name,
-                temperature=0.5,
-                max_tokens=1024,
-            )
-            return chat_completion.choices[0].message.content.strip()
+            return self._chat([{"role": "system", "content": "You are a professional cover letter writer."}, {"role": "user", "content": prompt}], temperature=0.5, max_tokens=1024)
         except Exception as e:
             logger.error(f"Cover letter generation failed: {e}")
             return "Cover letter generation failed. Please try again."
@@ -257,16 +268,7 @@ class ResumeAnalytics:
         )
 
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "You are a professional cover letter writer."},
-                    {"role": "user", "content": prompt},
-                ],
-                model=self.model_name,
-                temperature=0.5,
-                max_tokens=1024,
-            )
-            return chat_completion.choices[0].message.content.strip()
+            return self._chat([{"role": "system", "content": "You are a professional cover letter writer."}, {"role": "user", "content": prompt}], temperature=0.5, max_tokens=1024)
         except Exception as e:
             logger.error(f"Custom cover letter failed: {e}")
             return "Cover letter generation failed."
@@ -277,23 +279,11 @@ class ResumeAnalytics:
     @ExceptionHandler
     def chatbot(self, query: str) -> str:
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
+            return self._chat([{"role": "system", "content": (
                             "You are a helpful career assistant. Help users with resume tips, "
                             "ATS optimization, job search advice, and interview preparation. "
                             "Be concise and friendly."
-                        ),
-                    },
-                    {"role": "user", "content": query},
-                ],
-                model=self.model_name,
-                temperature=0.5,
-                max_tokens=512,
-            )
-            return chat_completion.choices[0].message.content.strip()
+                        )}, {"role": "user", "content": query}], temperature=0.5, max_tokens=512)
         except Exception as e:
             logger.error(f"Chatbot error: {e}")
             return "Sorry, I'm having trouble right now. Please try again."
@@ -318,16 +308,7 @@ class ResumeAnalytics:
         )
 
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "You are a helpful document assistant."},
-                    {"role": "user", "content": prompt},
-                ],
-                model=self.model_name,
-                temperature=0.3,
-                max_tokens=1024,
-            )
-            return chat_completion.choices[0].message.content.strip()
+            return self._chat([{"role": "system", "content": "You are a helpful document assistant."}, {"role": "user", "content": prompt}], temperature=0.3, max_tokens=1024)
         except Exception as e:
             logger.error(f"PDF chatbot error: {e}")
             return "Error processing your documents. Please try again."
@@ -335,9 +316,10 @@ class ResumeAnalytics:
     # ────────────────────────────────────────────
     #  SAFE DEFAULT (prevents AttributeError)
     # ────────────────────────────────────────────
-    def _default_result(self) -> Dict[str, Any]:
+    def _default_result(self, error: str = "") -> Dict[str, Any]:
         """Return safe empty result so app.py never gets None."""
         return {
+            "ERROR": error,
             "ATS_SCORE": 0,
             "RESUME_RELEVANCE_SCORE": 0,
             "ROLE_FIT_SCORE": 0,
